@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
-import type { User, ChatMessage } from "./types/chat";
+import type { User } from "./types/chat";
+import { socket } from "./socket";
+import type { ServerMessage } from "./socket";
 import UserList from "./components/UserList";
 import ChatWindow from "./components/ChatWindow";
 import "./App.css";
 
-const fakeMessages: ChatMessage[] = [
-  { id: 1, text: "Hello!", senderId: 1, createdAt: "10:00" },
-  { id: 2, text: "Hi!", senderId: 0, createdAt: "10:01" },
-  { id: 3, text: "How are you?", senderId: 1, createdAt: "10:02" },
-];
+const CURRENT_USER_ID = 0;
+const CURRENT_USER_NAME = "You";
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>(fakeMessages);
+  const [messages, setMessages] = useState<ServerMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -28,6 +27,18 @@ function App() {
         console.error("Failed to fetch users:", err);
         setLoading(false);
       });
+  }, []);
+
+  useEffect(() => {
+    function handleNewMessage(message: ServerMessage) {
+      setMessages((prev) => [...prev, message]);
+    }
+
+    socket.on("newMessage", handleNewMessage);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+    };
   }, []);
 
   if (loading) {
@@ -48,14 +59,13 @@ function App() {
       <ChatWindow
         user={selectedUser}
         messages={messages}
+        currentUserId={CURRENT_USER_ID}
         onSendMessage={(text: string) => {
-          const newMessage: ChatMessage = {
-            id: messages.length + 1,
+          socket.emit("sendMessage", {
             text,
-            senderId: 0,
-            createdAt: new Date().toLocaleTimeString(),
-          };
-          setMessages([...messages, newMessage]);
+            senderId: CURRENT_USER_ID,
+            senderName: CURRENT_USER_NAME,
+          });
         }}
       />
     </div>
