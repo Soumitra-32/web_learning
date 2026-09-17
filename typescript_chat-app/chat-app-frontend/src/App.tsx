@@ -30,6 +30,15 @@ function App() {
   }, []);
 
   useEffect(() => {
+    fetch("http://localhost:3001/api/messages")
+      .then((res) => res.json())
+      .then((data: ServerMessage[]) => {
+        setMessages(data);
+      })
+      .catch((err) => console.error("Failed to fetch messages:", err));
+  }, []);
+
+  useEffect(() => {
     function handleNewMessage(message: ServerMessage) {
       setMessages((prev) => [...prev, message]);
     }
