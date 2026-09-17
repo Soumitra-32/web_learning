@@ -6,6 +6,15 @@ export interface User {
   isOnline: boolean;
 }
 
+export interface UserRow {
+  id: number;
+  name: string;
+  email: string;
+  password: string;
+  is_online: boolean;
+  created_at: Date;
+}
+
 export interface RegisterRequestBody {
   name: string;
   email: string;

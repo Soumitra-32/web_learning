@@ -2,8 +2,8 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import type { RegisterRequestBody, LoginRequestBody, User } from "../types/auth";
-import { findUserByEmail, addUser, users } from "../data/users";
+import type { RegisterRequestBody, LoginRequestBody } from "../types/auth";
+import { findUserByEmail, addUser } from "../data/users";
 import { JWT_SECRET } from "../middleware/auth";
 
 const router = Router();
@@ -16,23 +16,14 @@ router.post("/register", async (req: Request, res: Response) => {
     return;
   }
 
-  const existingUser = findUserByEmail(email);
+  const existingUser = await findUserByEmail(email);
   if (existingUser) {
     res.status(409).json({ error: "Email already registered" });
     return;
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  const newUser: User = {
-    id: users.length + 1,
-    name,
-    email,
-    password: hashedPassword,
-    isOnline: false,
-  };
-
-  addUser(newUser);
+  const newUser = await addUser(name, email, hashedPassword);
 
   res.status(201).json({
     message: "User registered successfully",
@@ -48,7 +39,7 @@ router.post("/login", async (req: Request, res: Response) => {
     return;
   }
 
-  const user = findUserByEmail(email);
+  const user = await findUserByEmail(email);
   if (!user) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
