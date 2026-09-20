@@ -1,5 +1,5 @@
-import type { User } from "../types/chat";
-import type { ServerMessage } from "../socket";
+import { useEffect, useRef } from "react";
+import type { ServerMessage, User } from "../types/chat";
 import Message from "./Message";
 import MessageInput from "./MessageInput";
 
@@ -8,25 +8,48 @@ interface ChatWindowProps {
   messages: ServerMessage[];
   currentUserId: number;
   onSendMessage: (text: string) => void;
+  disabled: boolean;
 }
 
-function ChatWindow({ user, messages, currentUserId, onSendMessage }: ChatWindowProps) {
+function ChatWindow({
+  user,
+  messages,
+  currentUserId,
+  onSendMessage,
+  disabled,
+}: ChatWindowProps) {
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep the newest message in view, also when switching contact.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length, user.id]);
+
   return (
     <div className="chat-window">
       <div className="chat-header">
         <h3>{user.name}</h3>
-        <span>{user.isOnline ? "Online" : "Offline"}</span>
+        <span className={`status ${user.isOnline ? "online" : "offline"}`}>
+          {user.isOnline ? "Online" : "Offline"}
+        </span>
       </div>
+
       <div className="chat-messages">
-        {messages.map((msg) => (
-          <Message
-            key={msg.id}
-            message={msg}
-            isOwnMessage={msg.senderId === currentUserId}
-          />
-        ))}
+        {messages.length === 0 ? (
+          <p className="chat-empty">No messages yet — say hi 👋</p>
+        ) : (
+          messages.map((message) => (
+            <Message
+              key={message.id}
+              message={message}
+              isOwnMessage={message.senderId === currentUserId}
+            />
+          ))
+        )}
+        <div ref={bottomRef} />
       </div>
-      <MessageInput onSend={onSendMessage} />
+
+      <MessageInput onSend={onSendMessage} disabled={disabled} />
     </div>
   );
 }
