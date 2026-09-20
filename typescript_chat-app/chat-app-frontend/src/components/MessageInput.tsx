@@ -1,27 +1,46 @@
 import { useState } from "react";
+import type { KeyboardEvent } from "react";
+
+const MAX_MESSAGE_LENGTH = 2000;
 
 interface MessageInputProps {
   onSend: (text: string) => void;
+  disabled?: boolean;
 }
 
-function MessageInput({ onSend }: MessageInputProps) {
+function MessageInput({ onSend, disabled = false }: MessageInputProps) {
   const [text, setText] = useState<string>("");
 
   const handleSend = () => {
-    if (text.trim() === "") return;
-    onSend(text);
+    if (disabled) return;
+
+    const trimmed = text.trim();
+    if (trimmed === "") return;
+
+    onSend(trimmed.slice(0, MAX_MESSAGE_LENGTH));
     setText("");
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleSend();
+    }
   };
 
   return (
     <div className="message-input">
       <input
         value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        placeholder="Type a message..."
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={disabled ? "Reconnecting…" : "Type a message..."}
+        disabled={disabled}
+        maxLength={MAX_MESSAGE_LENGTH}
       />
-      <button onClick={handleSend}>Send</button>
+      <button type="button" onClick={handleSend} disabled={disabled || text.trim() === ""}>
+        Send
+      </button>
     </div>
   );
 }
