@@ -40,7 +40,9 @@ export async function addUser(
 }
 
 export async function getAllUsers(): Promise<User[]> {
-  const result = await pool.query<UserRow>("SELECT * FROM users");
+  const result = await pool.query<UserRow>(
+    "SELECT * FROM users ORDER BY name ASC"
+  );
   return result.rows.map(mapRowToUser);
 }
 
@@ -52,4 +54,9 @@ export async function setUserOnlineStatus(
     isOnline,
     id,
   ]);
+}
+
+/** Clears stale "online" flags left behind by a crash or hard restart. */
+export async function resetOnlineStatus(): Promise<void> {
+  await pool.query("UPDATE users SET is_online = false WHERE is_online = true");
 }
