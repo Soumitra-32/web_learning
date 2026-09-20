@@ -1,25 +1,17 @@
+import { io } from "socket.io-client";
+import type { Socket } from "socket.io-client";
+import { API_URL } from "./api";
+import type { ClientToServerEvents, ServerToClientEvents } from "./types/chat";
 
+export type ChatSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
-import { io, Socket } from "socket.io-client";
-
-interface ServerMessage {
-  id: number;
-  text: string;
-  senderId: number;
-  senderName: string;
-  createdAt: string;
+/**
+ * Creates a socket that authenticates with the caller's JWT during the
+ * handshake. A new socket is created per login, so a token can never leak
+ * into a session that has already been logged out.
+ */
+export function createSocket(token: string): ChatSocket {
+  return io(API_URL, {
+    auth: { token },
+  });
 }
-
-interface ClientToServerEvents {
-  sendMessage: (data: { text: string; senderId: number; senderName: string }) => void;
-}
-
-interface ServerToClientEvents {
-  newMessage: (message: ServerMessage) => void;
-}
-
-export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(
-  "http://localhost:3001"
-);
-
-export type { ServerMessage };
